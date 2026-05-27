@@ -470,6 +470,18 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Mobile FAB — sits above the bottom nav */}
+      <div className="md:hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-40">
+        <a
+          href="/dashboard/create"
+          className="flex items-center gap-2 bg-[#181818] text-white px-6 py-3 rounded-full shadow-2xl shadow-black/30 active:scale-95 transition-transform"
+          style={{ boxShadow: "0px 16px 32px rgba(0,0,0,0.25)" }}
+        >
+          <Plus size={18} />
+          <span className="font-semibold text-sm tracking-[-0.04em]">Create Assignment</span>
+        </a>
+      </div>
     </div>
   );
 }
