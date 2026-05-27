@@ -69,9 +69,9 @@ interface AssignmentFormState {
   reset: () => void;
   submitForm: (clerkId: string) => Promise<string | null>;
 
-  // WebSocket
-  connectSocket: (jobId: string) => void;
-  disconnectSocket: () => void;
+  // Polling
+  startPolling: (assignmentId: string) => void;
+  stopPolling: () => void;
   setJobStatus: (status: JobStatus) => void;
   setGeneratedAssignmentId: (id: string) => void;
 }
@@ -93,7 +93,7 @@ const DEFAULT_STATE = {
   errors: {},
 };
 
-let _socket: import("socket.io-client").Socket | null = null;
+let _pollInterval: ReturnType<typeof setInterval> | null = null;
 
 export const useAssignmentStore = create<AssignmentFormState>((set, get) => ({
   ...DEFAULT_STATE,
@@ -230,10 +230,10 @@ export const useAssignmentStore = create<AssignmentFormState>((set, get) => ({
       // Kick off AI generation
       await fetch(`${API_URL}/api/assignments/${data._id}/generate`, { method: "POST" });
 
-      // Connect socket for real-time updates
-      get().connectSocket(data._id);
+      // Start polling for status updates
+      get().startPolling(data._id);
       return data._id;
-    } catch (err) {
+    } catch {
       set({
         isSubmitting: false,
         errors: { general: "Something went wrong. Please try again." },
@@ -242,32 +242,33 @@ export const useAssignmentStore = create<AssignmentFormState>((set, get) => ({
     }
   },
 
-  connectSocket: async (jobId) => {
-    if (_socket?.connected) return;
+  startPolling: (assignmentId: string) => {
+    if (_pollInterval) clearInterval(_pollInterval);
 
-    const { io } = await import("socket.io-client");
-    _socket = io(API_URL, { transports: ["websocket", "polling"] });
+    _pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/assignments/${assignmentId}`);
+        if (!res.ok) return;
+        const data = await res.json();
 
-    _socket.on("connect", () => {
-      _socket?.emit("join-job", jobId);
-    });
-
-    _socket.on("job:completed", (data: { assignmentId: string }) => {
-      set({ jobStatus: "completed", generatedAssignmentId: data.assignmentId });
-    });
-
-    _socket.on("job:failed", () => {
-      set({ jobStatus: "failed" });
-    });
-
-    _socket.on("job:progress", (data: { status: JobStatus }) => {
-      set({ jobStatus: data.status });
-    });
+        if (data.status === "completed") {
+          set({ jobStatus: "completed", generatedAssignmentId: data._id });
+          get().stopPolling();
+        } else if (data.status === "failed") {
+          set({ jobStatus: "failed" });
+          get().stopPolling();
+        }
+      } catch {
+        // ignore transient fetch errors, keep polling
+      }
+    }, 3000);
   },
 
-  disconnectSocket: () => {
-    _socket?.disconnect();
-    _socket = null;
+  stopPolling: () => {
+    if (_pollInterval) {
+      clearInterval(_pollInterval);
+      _pollInterval = null;
+    }
   },
 
   setJobStatus: (status) => set({ jobStatus: status }),

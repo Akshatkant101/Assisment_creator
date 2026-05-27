@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Download, RotateCcw, CheckCircle2, AlertCircle, Loader2, Printer } from "lucide-react";
+import { ArrowLeft, Download, RotateCcw, AlertCircle, Loader2 } from "lucide-react";
 import API_URL from "@/lib/api";
 
 interface Option  { label: string; text: string; }
@@ -252,16 +252,19 @@ export default function AssignmentPage() {
   const { id } = useParams<{ id: string }>();
   const router  = useRouter();
 
-  const [data, setData]         = useState<AssignmentData | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [genMsg, setGenMsg]     = useState("Contacting AI...");
-  const [view, setView]         = useState<ViewMode>("paper");
-  const socketRef               = useRef<import("socket.io-client").Socket | null>(null);
+  const [data, setData]       = useState<AssignmentData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [view, setView]       = useState<ViewMode>("paper");
+  const pollRef               = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchData = async () => {
+  const stopPolling = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  };
+
+  const fetchData = async (): Promise<AssignmentData | undefined> => {
     try {
       const res = await fetch(`${API_URL}/api/assignments/${id}`);
-      if (!res.ok) return;
+      if (!res.ok) return undefined;
       const json: AssignmentData = await res.json();
       setData(json);
       return json;
@@ -270,51 +273,38 @@ export default function AssignmentPage() {
     }
   };
 
+  const startPolling = () => {
+    if (pollRef.current) return;
+    pollRef.current = setInterval(async () => {
+      const d = await fetchData();
+      if (d?.status === "completed" || d?.status === "failed") {
+        stopPolling();
+        setLoading(false);
+      }
+    }, 3000);
+  };
+
   const triggerGenerate = async () => {
     try {
       await fetch(`${API_URL}/api/assignments/${id}/generate`, { method: "POST" });
       setData((d) => d ? { ...d, status: "generating" } : d);
-      connectSocket();
+      startPolling();
     } catch {
       setData((d) => d ? { ...d, status: "failed" } : d);
     }
-  };
-
-  const connectSocket = async () => {
-    if (socketRef.current?.connected) return;
-    const { io } = await import("socket.io-client");
-    const socket = io(API_URL, { transports: ["websocket", "polling"] });
-    socketRef.current = socket;
-
-    socket.on("connect", () => { socket.emit("join-job", id); });
-
-    socket.on("job:progress", ({ message }: { status: string; message: string }) => {
-      setGenMsg(message);
-    });
-
-    socket.on("job:completed", () => {
-      socket.disconnect();
-      fetchData().then(() => setLoading(false));
-    });
-
-    socket.on("job:failed", () => {
-      socket.disconnect();
-      setData((d) => d ? { ...d, status: "failed" } : d);
-    });
   };
 
   useEffect(() => {
     fetchData().then((d) => {
       setLoading(false);
       if (d?.status === "draft") {
-        // Auto-trigger generation for drafts that arrive here
         triggerGenerate();
       } else if (d?.status === "generating") {
-        connectSocket();
+        startPolling();
       }
     });
 
-    return () => { socketRef.current?.disconnect(); };
+    return () => stopPolling();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -336,11 +326,11 @@ export default function AssignmentPage() {
       ) : !data ? (
         <div className="text-center py-24 text-gray-400">Assignment not found.</div>
       ) : data.status === "generating" ? (
-        <GeneratingView message={genMsg} />
+        <GeneratingView message="Generating your assignment…" />
       ) : data.status === "failed" ? (
         <FailedView onRetry={triggerGenerate} />
       ) : data.status === "draft" ? (
-        <GeneratingView message="Contacting AI..." />
+        <GeneratingView message="Contacting AI…" />
       ) : (
         <ExamPaperView data={data} view={view} setView={setView} />
       )}
