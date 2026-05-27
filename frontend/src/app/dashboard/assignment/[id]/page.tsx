@@ -110,78 +110,107 @@ function FailedView({ onRetry }: { onRetry: () => void }) {
 // ─── Exam paper view ──────────────────────────────────────────────────────────
 function ExamPaperView({ data, view, setView }: { data: AssignmentData; view: ViewMode; setView: (v: ViewMode) => void }) {
   const totalTime = Math.max(30, data.numberOfQuestions * 3);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const { pdf } = await import("@react-pdf/renderer");
+      const { AssignmentPDFDocument } = await import("@/components/AssignmentPDF");
+      const blob = await pdf(<AssignmentPDFDocument data={data} view={view} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data.title || "assignment"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto pb-24">
       {/* Controls */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2 bg-white rounded-full border border-gray-200 p-1">
+      <div className="flex items-center justify-between mb-4 gap-2">
+        <div className="flex items-center gap-0.5 md:gap-1 bg-white rounded-full border border-gray-200 p-0.5 md:p-1">
           {(["paper", "answers"] as ViewMode[]).map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${view === v ? "bg-[#1a1a1a] text-white" : "text-gray-500 hover:text-gray-900"}`}
+              className={`px-2.5 py-1 md:px-5 md:py-2 rounded-full text-[11px] md:text-sm font-semibold transition-all ${view === v ? "bg-[#1a1a1a] text-white" : "text-gray-500 hover:text-gray-900"}`}
             >
               {v === "paper" ? "Exam Paper" : "Answer Key"}
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 text-gray-600 border border-gray-200 bg-white px-4 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-50 transition-colors"
-          >
-            <Download size={15} />
-            Download PDF
-          </button>
-        </div>
+        <button
+          onClick={handleDownload}
+          disabled={downloading}
+          className="flex items-center gap-1 md:gap-2 text-gray-600 border border-gray-200 bg-white px-2.5 py-1 md:px-4 md:py-2.5 rounded-full text-[11px] md:text-sm font-semibold hover:bg-gray-50 transition-colors flex-shrink-0 disabled:opacity-60"
+        >
+          {downloading ? (
+            <Loader2 size={12} className="animate-spin md:hidden" />
+          ) : (
+            <Download size={12} className="md:hidden" />
+          )}
+          {downloading ? (
+            <Loader2 size={15} className="animate-spin hidden md:block" />
+          ) : (
+            <Download size={15} className="hidden md:block" />
+          )}
+          <span className="md:hidden">{downloading ? "..." : "PDF"}</span>
+          <span className="hidden md:inline">{downloading ? "Generating…" : "Download PDF"}</span>
+        </button>
       </div>
 
       {/* Paper */}
       <div className="bg-white rounded-[1.75rem] shadow-sm border border-gray-100 overflow-hidden print:shadow-none print:rounded-none" id="exam-paper">
-        {/* Header matching mockup */}
-        <div className="px-10 pt-10 pb-6 text-black font-sans">
-          <div className="text-center mb-8">
-            <h1 className="text-[24px] font-bold tracking-[-0.02em] mb-1.5">Delhi Public School, Sector-4, Bokaro</h1>
-            <p className="text-[17px] font-semibold mb-1">Subject: {data.subject || "General"}</p>
-            <p className="text-[17px] font-semibold">Class: {data.gradeLevel || "General"}</p>
+        {/* Header */}
+        <div className="px-4 md:px-10 pt-6 md:pt-10 pb-4 md:pb-6 text-black font-sans">
+          <div className="text-center mb-6 md:mb-8">
+            <h1 className="text-[15px] md:text-[24px] font-bold tracking-[-0.02em] mb-1 md:mb-1.5">Delhi Public School, Sector-4, Bokaro</h1>
+            <p className="text-[13px] md:text-[17px] font-semibold mb-0.5 md:mb-1">Subject: {data.subject || "General"}</p>
+            <p className="text-[13px] md:text-[17px] font-semibold">Class: {data.gradeLevel || "General"}</p>
           </div>
 
-          <div className="flex justify-between items-center text-[15px] font-semibold mb-6">
+          <div className="flex justify-between items-center text-[12px] md:text-[15px] font-semibold mb-4 md:mb-6">
             <span>Time Allowed: {totalTime} minutes</span>
             <span>Maximum Marks: {data.totalMarks}</span>
           </div>
 
-          <p className="text-[15px] font-semibold mb-8">All questions are compulsory unless stated otherwise.</p>
+          <p className="text-[12px] md:text-[15px] font-semibold mb-4 md:mb-8">All questions are compulsory unless stated otherwise.</p>
 
           {view === "paper" && (
-            <div className="flex flex-col gap-2.5 text-[15px] font-semibold mb-6">
-              <div className="flex items-end">
+            <div className="flex flex-col gap-2 text-[12px] md:text-[15px] font-semibold mb-4 md:mb-6">
+              <div className="flex items-end gap-1">
                 <span>Name: </span>
-                <span className="border-b border-black w-48 inline-block ml-1 h-4" />
+                <span className="border-b border-black flex-1 h-4" />
               </div>
-              <div className="flex items-end">
+              <div className="flex items-end gap-1">
                 <span>Roll Number: </span>
-                <span className="border-b border-black w-40 inline-block ml-1 h-4" />
+                <span className="border-b border-black flex-1 h-4" />
               </div>
-              <div className="flex items-end">
+              <div className="flex items-end gap-1">
                 <span>Class: {data.gradeLevel || ""} Section: </span>
-                <span className="border-b border-black w-32 inline-block ml-1 h-4" />
+                <span className="border-b border-black flex-1 h-4" />
               </div>
             </div>
           )}
         </div>
 
         {/* Sections */}
-        <div className="px-10 py-8 space-y-10">
+        <div className="px-4 md:px-10 py-5 md:py-8 space-y-8 md:space-y-10">
           {data.sections.map((section) => (
             <div key={section._id}>
               {/* Section header */}
-              <div className="mb-6">
-                <h2 className="text-xl font-bold text-black text-center mb-6">{section.name}</h2>
-                <h3 className="text-[15px] font-bold text-black mb-1">Short Answer Questions</h3>
+              <div className="mb-4 md:mb-6">
+                <h2 className="text-base md:text-xl font-bold text-black text-center mb-3 md:mb-6">{section.name}</h2>
+                <h3 className="text-[13px] md:text-[15px] font-bold text-black mb-1">{section.questions[0]?.type || "Questions"}</h3>
                 {section.instructions && (
-                  <p className="text-[13px] text-gray-700 font-medium italic">{section.instructions}</p>
+                  <p className="text-[11px] md:text-[13px] text-gray-700 font-medium italic">{section.instructions}</p>
                 )}
               </div>
 

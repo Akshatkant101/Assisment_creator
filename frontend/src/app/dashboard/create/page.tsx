@@ -11,6 +11,7 @@ export default function CreateAssignmentPage() {
   const { user } = useUser();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const submittingRef = useRef(false);
 
   const {
     title, setTitle,
@@ -58,10 +59,13 @@ export default function CreateAssignmentPage() {
   );
 
   const handleNext = async () => {
+    if (submittingRef.current) return;
     if (!validate()) return;
     if (!user) return;
+    submittingRef.current = true;
     const id = await submitForm(user.id);
     if (id) router.push(`/dashboard/assignment/${id}`);
+    else submittingRef.current = false;
   };
 
   /* ── Shared form fields (rendered inside both desktop + mobile panels) ── */
