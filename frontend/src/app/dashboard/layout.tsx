@@ -16,8 +16,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       {/* Sidebar */}
       <aside className="w-[280px] bg-white m-4 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col overflow-hidden flex-shrink-0 print:hidden">
         {/* Logo */}
-        <div className="flex items-center gap-2 px-6 py-8">
-          <img src="/logo.png" alt="VedaAI Logo" className="w-16 h-16 object-contain flex-shrink-0" />
+        <div className="flex items-center gap-3 px-8 py-8">
+          <img src="/logo.png" alt="VedaAI Logo" className="w-8 h-8 object-contain flex-shrink-0" />
           <span className="text-[28px] font-bold tracking-[-0.04em] text-[#303030]">VedaAI</span>
         </div>
 
