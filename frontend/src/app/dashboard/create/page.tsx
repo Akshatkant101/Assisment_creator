@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useCallback, useEffect } from "react";
 import { ArrowLeft, ArrowRight, Calendar, ChevronDown, Minus, Plus, X, Mic, UploadCloud, Loader2 } from "lucide-react";
 import { useAssignmentStore, QUESTION_TYPE_OPTIONS } from "@/store/useAssignmentStore";
+import API_URL from "@/lib/api";
 
 export default function CreateAssignmentPage() {
   const { user } = useUser();
@@ -26,7 +27,7 @@ export default function CreateAssignmentPage() {
 
   useEffect(() => {
     if (user) {
-      fetch(`http://127.0.0.1:5000/api/users/me?clerkId=${user.id}`)
+      fetch(`${API_URL}/api/users/me?clerkId=${user.id}`)
         .then((res) => res.json())
         .then((data) => {
           if (data && !data.error) {

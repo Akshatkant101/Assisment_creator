@@ -4,6 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { Search, MoreVertical, Plus, ArrowLeft, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import API_URL from "@/lib/api";
 
 interface Assignment {
   _id: string;
@@ -31,7 +32,7 @@ export default function DashboardPage() {
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
-      await fetch(`http://127.0.0.1:5000/api/assignments/${id}`, { method: "DELETE" });
+      await fetch(`${API_URL}/api/assignments/${id}`, { method: "DELETE" });
       setAssignments(assignments.filter(a => a._id !== id));
       setOpenMenu(null);
     } catch (error) {
@@ -50,7 +51,7 @@ export default function DashboardPage() {
       setTimeout(() => setShowWelcome(false), 4000);
     }
 
-    fetch("http://127.0.0.1:5000/api/users/sync", {
+    fetch(`${API_URL}/api/users/sync`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -60,7 +61,7 @@ export default function DashboardPage() {
         lastName: user.lastName,
       }),
     })
-      .then(() => fetch(`http://127.0.0.1:5000/api/assignments?clerkId=${user.id}`))
+      .then(() => fetch(`${API_URL}/api/assignments?clerkId=${user.id}`))
       .then((r) => r.json())
       .then((data) => setAssignments(Array.isArray(data) ? data : []))
       .catch(console.error)

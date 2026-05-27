@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import API_URL from "@/lib/api";
 
 export const QUESTION_TYPE_OPTIONS = [
   "Multiple Choice Questions",
@@ -203,7 +204,7 @@ export const useAssignmentStore = create<AssignmentFormState>((set, get) => ({
     const types = questionTypes.map((q) => q.type);
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/api/assignments", {
+      const res = await fetch(`${API_URL}/api/assignments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -227,7 +228,7 @@ export const useAssignmentStore = create<AssignmentFormState>((set, get) => ({
       set({ jobId: data._id, jobStatus: "generating", isSubmitting: false });
 
       // Kick off AI generation
-      await fetch(`http://127.0.0.1:5000/api/assignments/${data._id}/generate`, { method: "POST" });
+      await fetch(`${API_URL}/api/assignments/${data._id}/generate`, { method: "POST" });
 
       // Connect socket for real-time updates
       get().connectSocket(data._id);
@@ -245,7 +246,7 @@ export const useAssignmentStore = create<AssignmentFormState>((set, get) => ({
     if (_socket?.connected) return;
 
     const { io } = await import("socket.io-client");
-    _socket = io("http://127.0.0.1:5000", { transports: ["websocket", "polling"] });
+    _socket = io(API_URL, { transports: ["websocket", "polling"] });
 
     _socket.on("connect", () => {
       _socket?.emit("join-job", jobId);

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Download, RotateCcw, CheckCircle2, AlertCircle, Loader2, Printer } from "lucide-react";
+import API_URL from "@/lib/api";
 
 interface Option  { label: string; text: string; }
 interface Question {
@@ -259,7 +260,7 @@ export default function AssignmentPage() {
 
   const fetchData = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:5000/api/assignments/${id}`);
+      const res = await fetch(`${API_URL}/api/assignments/${id}`);
       if (!res.ok) return;
       const json: AssignmentData = await res.json();
       setData(json);
@@ -271,7 +272,7 @@ export default function AssignmentPage() {
 
   const triggerGenerate = async () => {
     try {
-      await fetch(`http://127.0.0.1:5000/api/assignments/${id}/generate`, { method: "POST" });
+      await fetch(`${API_URL}/api/assignments/${id}/generate`, { method: "POST" });
       setData((d) => d ? { ...d, status: "generating" } : d);
       connectSocket();
     } catch {
@@ -282,7 +283,7 @@ export default function AssignmentPage() {
   const connectSocket = async () => {
     if (socketRef.current?.connected) return;
     const { io } = await import("socket.io-client");
-    const socket = io("http://127.0.0.1:5000", { transports: ["websocket", "polling"] });
+    const socket = io(API_URL, { transports: ["websocket", "polling"] });
     socketRef.current = socket;
 
     socket.on("connect", () => { socket.emit("join-job", id); });

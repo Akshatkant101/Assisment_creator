@@ -8,6 +8,7 @@ import {
   Settings,
   Sparkles,
 } from "lucide-react";
+import API_URL from "@/lib/api";
 
 export function SidebarNav() {
   const pathname = usePathname();
@@ -17,7 +18,7 @@ export function SidebarNav() {
 
   useEffect(() => {
     if (user) {
-      fetch(`http://127.0.0.1:5000/api/assignments?clerkId=${user.id}`)
+      fetch(`${API_URL}/api/assignments?clerkId=${user.id}`)
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data)) {

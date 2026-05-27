@@ -3,6 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { Loader2, Save } from "lucide-react";
+import API_URL from "@/lib/api";
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -17,7 +18,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (user) {
-      fetch(`http://127.0.0.1:5000/api/users/me?clerkId=${user.id}`)
+      fetch(`${API_URL}/api/users/me?clerkId=${user.id}`)
         .then((res) => res.json())
         .then((data) => {
           if (data && !data.error) {
@@ -36,7 +37,7 @@ export default function SettingsPage() {
     setSaving(true);
     setMessage("");
     try {
-      const res = await fetch("http://127.0.0.1:5000/api/users/me", {
+      const res = await fetch(`${API_URL}/api/users/me`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
