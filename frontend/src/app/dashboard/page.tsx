@@ -99,21 +99,24 @@ export default function DashboardPage() {
       </p>
 
       {/* Filter and Search */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
-        <button className="flex items-center gap-2 text-gray-500 text-sm font-semibold px-5 py-2.5 bg-white rounded-full border border-gray-200 shadow-sm hover:bg-gray-50 hover:text-gray-900 transition-colors">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <div className="flex items-center w-full bg-white border border-gray-200 rounded-full shadow-sm mb-6 max-w-full">
+        <button className="flex items-center gap-2 text-gray-400 text-[13px] font-semibold px-6 py-2.5 hover:text-gray-700 transition-colors shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
           </svg>
           Filter By
         </button>
-        <div className="relative flex-1 w-full max-w-xl ml-auto">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+        
+        <div className="h-5 w-px bg-gray-200 hidden sm:block"></div>
+        
+        <div className="relative flex-1 flex items-center">
+          <Search className="absolute left-4 text-gray-300" size={16} />
           <input
             type="text"
             placeholder="Search Assignment"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-full shadow-sm text-sm font-medium placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all"
+            className="w-full pl-11 pr-6 py-2.5 bg-transparent text-[13px] font-medium placeholder:text-gray-400 focus:outline-none transition-all rounded-r-full"
           />
         </div>
       </div>
@@ -133,20 +136,24 @@ export default function DashboardPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-            <Plus size={28} className="text-gray-400" />
-          </div>
-          <p className="text-gray-700 font-semibold text-lg">No assignments yet</p>
-          <p className="text-gray-400 text-sm mt-1">Click &quot;Create Assignment&quot; to get started.</p>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <img src="/No_assignment.svg" alt="No assignments" className="w-64 h-64 mb-2 pointer-events-none" />
+          <h3 className="text-gray-800 font-bold text-lg mb-2">No assignments yet</h3>
+          <p className="text-gray-500 text-sm max-w-md mx-auto mb-6 leading-relaxed">
+            Create your first assignment to start collecting and grading student submissions. You can set up rubrics, define marking criteria, and let AI assist with grading.
+          </p>
+          <a href="/dashboard/create" className="bg-[#1a1a1a] hover:bg-black text-white px-6 py-2.5 rounded-full flex items-center gap-2 shadow-md transition-transform hover:scale-105 active:scale-95 text-sm font-semibold">
+            <Plus size={16} />
+            Create Your First Assignment
+          </a>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10 pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10 pb-24">
           {filtered.map((a) => (
             <div
               key={a._id}
               onClick={() => a.status === "completed" && (window.location.href = `/dashboard/assignment/${a._id}`)}
-              className={`bg-white p-6 rounded-[1.25rem] shadow-sm border border-gray-100 flex flex-col justify-between h-[160px] hover:shadow-md hover:border-gray-200 transition-all group ${a.status === "completed" ? "cursor-pointer" : ""}`}
+              className={`bg-white p-5 rounded-[1.25rem] shadow-sm border border-gray-100 flex flex-col justify-between h-[130px] hover:shadow-md hover:border-gray-200 transition-all group ${a.status === "completed" ? "cursor-pointer" : ""}`}
             >
               <div className="flex justify-between items-start">
                 <div className="min-w-0 mr-2">
@@ -196,12 +203,12 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex justify-between items-end mt-4">
-                <p className="text-[13px] font-bold text-gray-900">
-                  Assigned on: <span className="text-gray-500 font-medium">{fmt(a.assignedDate)}</span>
+              <div className="flex justify-between items-end mt-2">
+                <p className="text-xs font-bold text-gray-900">
+                  Assigned on : <span className="text-gray-500 font-medium">{fmt(a.assignedDate)}</span>
                 </p>
-                <p className="text-[13px] font-bold text-gray-900">
-                  Due: <span className="text-gray-500 font-medium">{fmt(a.dueDate)}</span>
+                <p className="text-xs font-bold text-gray-900">
+                  Due : <span className="text-gray-500 font-medium">{fmt(a.dueDate)}</span>
                 </p>
               </div>
             </div>
@@ -218,7 +225,7 @@ export default function DashboardPage() {
       </div>
 
       {/* White fade at bottom */}
-      <div className="fixed bottom-0 left-[300px] right-0 h-32 bg-gradient-to-t from-[#f4f4f5] to-transparent pointer-events-none z-20"></div>
+      <div className="fixed bottom-0 left-[300px] right-0 h-40 bg-gradient-to-t from-[#f4f4f5] via-[#f4f4f5]/90 to-transparent pointer-events-none z-20 backdrop-blur-[2px]"></div>
     </div>
   );
 }

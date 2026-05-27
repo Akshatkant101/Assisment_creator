@@ -2,8 +2,8 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useRef, useCallback } from "react";
-import { ArrowLeft, ArrowRight, Calendar, ChevronDown, Minus, Plus, X, Mic, UploadCloud } from "lucide-react";
+import { useRef, useCallback, useEffect } from "react";
+import { ArrowLeft, ArrowRight, Calendar, ChevronDown, Minus, Plus, X, Mic, UploadCloud, Loader2 } from "lucide-react";
 import { useAssignmentStore, QUESTION_TYPE_OPTIONS } from "@/store/useAssignmentStore";
 
 export default function CreateAssignmentPage() {
@@ -12,6 +12,9 @@ export default function CreateAssignmentPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
+    title, setTitle,
+    subject, setSubject,
+    gradeLevel, setGradeLevel,
     dueDate, setDueDate,
     questionTypes, addQuestionType, removeQuestionType, updateType,
     incrementCount, decrementCount, incrementMarks, decrementMarks,
@@ -20,6 +23,22 @@ export default function CreateAssignmentPage() {
     isDragging, setIsDragging,
     errors, validate, isSubmitting, submitForm,
   } = useAssignmentStore();
+
+  useEffect(() => {
+    if (user) {
+      fetch(`http://127.0.0.1:5000/api/users/me?clerkId=${user.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && !data.error) {
+            // Only pre-fill if the fields are currently empty (so we don't overwrite user changes if they navigate back)
+            if (!subject && data.subject) setSubject(data.subject);
+            if (!gradeLevel && data.classLevel) setGradeLevel(data.classLevel);
+          }
+        })
+        .catch(console.error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const totalQuestions = questionTypes.reduce((s, q) => s + q.count, 0);
   const totalMarks = questionTypes.reduce((s, q) => s + q.count * q.marks, 0);
@@ -46,14 +65,8 @@ export default function CreateAssignmentPage() {
   };
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-[#EEEEEE] to-[#DADADA] px-6 py-8 relative overflow-hidden">
-      {/* Decorative blur ellipse */}
-      <div
-        className="pointer-events-none absolute -bottom-20 left-0 right-0 h-[428px] rounded-full opacity-40"
-        style={{ background: "rgba(76,76,76,0.4)", filter: "blur(400px)" }}
-      />
-
-      <div className="relative flex flex-col items-center">
+    <div className="min-h-full py-2 relative">
+      <div className="relative flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
 
         {/* ─── Page header ─────────────────────────────────────── */}
         <div className="flex flex-col items-center gap-2 mb-8 w-full max-w-[810px]">
@@ -71,8 +84,8 @@ export default function CreateAssignmentPage() {
           </p>
         </div>
 
-        {/* ─── Form panel (glassmorphism) ───────────────────────── */}
-        <div className="w-full max-w-[810px] bg-white/50 backdrop-blur-sm rounded-[32px] p-8 flex flex-col gap-8">
+        {/* ─── Form panel ─────────────────────────────────────── */}
+        <div className="w-full max-w-[810px] bg-white rounded-[24px] p-6 flex flex-col gap-6 shadow-sm border border-gray-100">
 
           {/* Section header */}
           <div>
@@ -82,6 +95,53 @@ export default function CreateAssignmentPage() {
             <p className="text-[14px] text-[rgba(94,94,94,0.8)] font-normal tracking-[-0.04em] leading-[140%] mt-1 max-w-[251px]">
               Basic information about your assignment
             </p>
+          </div>
+
+          {/* ─── 0. Basic Details (Title, Subject, Class) ───────── */}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-[16px] font-bold text-[#303030] tracking-[-0.04em] leading-[140%]">
+                Assignment Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Quiz on Electricity"
+                className={`w-full px-4 py-[11px] rounded-full border-[1.25px] ${errors.title ? "border-red-400" : "border-[#DADADA]"} bg-transparent text-[16px] font-medium text-[#303030] outline-none tracking-[-0.04em]`}
+              />
+              {errors.title && <p className="text-sm text-red-500 tracking-[-0.04em]">{errors.title}</p>}
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="flex flex-col gap-2 flex-1">
+                <label className="text-[16px] font-bold text-[#303030] tracking-[-0.04em] leading-[140%]">
+                  Subject
+                </label>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="e.g. Science"
+                  className={`w-full px-4 py-[11px] rounded-full border-[1.25px] ${errors.subject ? "border-red-400" : "border-[#DADADA]"} bg-transparent text-[16px] font-medium text-[#303030] outline-none tracking-[-0.04em]`}
+                />
+                {errors.subject && <p className="text-sm text-red-500 tracking-[-0.04em]">{errors.subject}</p>}
+              </div>
+
+              <div className="flex flex-col gap-2 flex-1">
+                <label className="text-[16px] font-bold text-[#303030] tracking-[-0.04em] leading-[140%]">
+                  Class / Grade
+                </label>
+                <input
+                  type="text"
+                  value={gradeLevel}
+                  onChange={(e) => setGradeLevel(e.target.value)}
+                  placeholder="e.g. 10th Grade"
+                  className={`w-full px-4 py-[11px] rounded-full border-[1.25px] ${errors.gradeLevel ? "border-red-400" : "border-[#DADADA]"} bg-transparent text-[16px] font-medium text-[#303030] outline-none tracking-[-0.04em]`}
+                />
+                {errors.gradeLevel && <p className="text-sm text-red-500 tracking-[-0.04em]">{errors.gradeLevel}</p>}
+              </div>
+            </div>
           </div>
 
           {/* ─── 1. File upload ───────────────────────────────────── */}
@@ -284,10 +344,19 @@ export default function CreateAssignmentPage() {
             type="button"
             onClick={handleNext}
             disabled={isSubmitting}
-            className="flex items-center gap-1 bg-[#181818] hover:bg-black transition-colors px-6 py-3 rounded-full text-[16px] font-medium text-white tracking-[-0.04em] disabled:opacity-60 shadow-sm"
+            className="flex items-center justify-center gap-2 bg-[#181818] hover:bg-black transition-all px-8 py-3.5 rounded-full text-[16px] font-semibold text-white tracking-[-0.04em] disabled:opacity-80 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 cursor-pointer min-w-[140px]"
           >
-            {isSubmitting ? "Saving..." : "Next"}
-            <ArrowRight size={20} />
+            {isSubmitting ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <span>Next</span>
+                <ArrowRight size={18} />
+              </>
+            )}
           </button>
         </div>
 

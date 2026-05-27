@@ -1,8 +1,9 @@
 import { UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
-import { Bell, ArrowLeft, FileText } from "lucide-react";
+import { Bell, FileText } from "lucide-react";
 import { ReactNode } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
+import { BackButton } from "@/components/BackButton";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const user = await currentUser();
@@ -13,13 +14,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   return (
     <div className="flex h-screen bg-[#f4f4f5] overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-[280px] bg-white m-4 rounded-[2rem] shadow-[0px_32px_48px_rgba(0,0,0,0.2),0px_16px_48px_rgba(0,0,0,0.12)] flex flex-col overflow-hidden flex-shrink-0">
+      <aside className="w-[280px] bg-white m-4 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col overflow-hidden flex-shrink-0 print:hidden">
         {/* Logo */}
-        <div className="flex items-center gap-3 px-8 py-8">
-          <div className="w-10 h-10 bg-gradient-to-b from-[#E56820] to-[#D45E3E] rounded-[15px] flex items-center justify-center text-white font-bold text-xl shadow-[0px_12.9px_25.7px_rgba(0,0,0,0.1),0px_8.6px_17.1px_rgba(0,0,0,0.15),0px_4.3px_8.6px_rgba(0,0,0,0.2)]">
-            V
-          </div>
-          <span className="text-[28px] font-bold tracking-[-0.06em] text-[#303030] leading-5">VedaAI</span>
+        <div className="flex items-center gap-2 px-6 py-8">
+          <img src="/logo.png" alt="VedaAI Logo" className="w-16 h-16 object-contain flex-shrink-0" />
+          <span className="text-[28px] font-bold tracking-[-0.04em] text-[#303030]">VedaAI</span>
         </div>
 
         {/* Nav (client component for active state) */}
@@ -48,13 +47,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden py-4 pr-4 min-w-0">
+      <main className="flex-1 flex flex-col overflow-hidden py-4 pr-4 min-w-0 print:p-0 print:m-0 print:overflow-visible">
         {/* Topbar */}
-        <header className="flex items-center justify-between mb-6 bg-white/75 backdrop-blur-sm rounded-2xl px-6 h-14 mx-0 border border-white/60">
+        <header className="flex items-center justify-between mb-6 bg-white/75 backdrop-blur-sm rounded-2xl px-6 h-14 mx-0 border border-white/60 print:hidden">
           <div className="flex items-center gap-3 text-[#A9A9A9]">
-            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-              <ArrowLeft size={20} />
-            </button>
+            <BackButton />
             <div className="flex items-center gap-2">
               <FileText size={18} />
               <span className="font-semibold text-[16px] tracking-[-0.04em]">Assignment</span>
@@ -76,7 +73,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         </header>
 
         {/* Page content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 relative">
+        <div className="flex-1 overflow-y-auto px-6 py-4 relative print:overflow-visible print:p-0">
           {children}
         </div>
       </main>

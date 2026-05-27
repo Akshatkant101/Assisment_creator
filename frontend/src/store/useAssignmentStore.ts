@@ -19,6 +19,9 @@ export interface QuestionTypeEntry {
 export type JobStatus = "idle" | "generating" | "completed" | "failed";
 
 interface FormErrors {
+  title?: string;
+  subject?: string;
+  gradeLevel?: string;
   dueDate?: string;
   questionTypes?: string;
   general?: string;
@@ -26,6 +29,9 @@ interface FormErrors {
 
 interface AssignmentFormState {
   // Form fields
+  title: string;
+  subject: string;
+  gradeLevel: string;
   dueDate: string;
   questionTypes: QuestionTypeEntry[];
   additionalInstructions: string;
@@ -43,6 +49,9 @@ interface AssignmentFormState {
   errors: FormErrors;
 
   // Actions
+  setTitle: (t: string) => void;
+  setSubject: (s: string) => void;
+  setGradeLevel: (g: string) => void;
   setDueDate: (date: string) => void;
   addQuestionType: () => void;
   removeQuestionType: (index: number) => void;
@@ -67,6 +76,9 @@ interface AssignmentFormState {
 }
 
 const DEFAULT_STATE = {
+  title: "",
+  subject: "",
+  gradeLevel: "",
   dueDate: "",
   questionTypes: [{ type: "Multiple Choice Questions", count: 5, marks: 2 }],
   additionalInstructions: "",
@@ -84,6 +96,10 @@ let _socket: import("socket.io-client").Socket | null = null;
 
 export const useAssignmentStore = create<AssignmentFormState>((set, get) => ({
   ...DEFAULT_STATE,
+
+  setTitle: (title) => set((s) => ({ title, errors: { ...s.errors, title: undefined } })),
+  setSubject: (subject) => set((s) => ({ subject, errors: { ...s.errors, subject: undefined } })),
+  setGradeLevel: (gradeLevel) => set((s) => ({ gradeLevel, errors: { ...s.errors, gradeLevel: undefined } })),
 
   setDueDate: (date) =>
     set((s) => ({ dueDate: date, errors: { ...s.errors, dueDate: undefined } })),
@@ -144,8 +160,12 @@ export const useAssignmentStore = create<AssignmentFormState>((set, get) => ({
     set((s) => ({ errors: { ...s.errors, [field]: undefined } })),
 
   validate: () => {
-    const { dueDate, questionTypes } = get();
+    const { title, subject, gradeLevel, dueDate, questionTypes } = get();
     const errors: FormErrors = {};
+
+    if (!title.trim()) errors.title = "Title is required";
+    if (!subject.trim()) errors.subject = "Subject is required";
+    if (!gradeLevel.trim()) errors.gradeLevel = "Class is required";
 
     if (!dueDate) {
       errors.dueDate = "Due date is required";
@@ -175,13 +195,12 @@ export const useAssignmentStore = create<AssignmentFormState>((set, get) => ({
   reset: () => set(DEFAULT_STATE),
 
   submitForm: async (clerkId) => {
-    const { dueDate, questionTypes, additionalInstructions } = get();
+    const { title, subject, gradeLevel, dueDate, questionTypes, additionalInstructions } = get();
     set({ isSubmitting: true, errors: {} });
 
     const totalQuestions = questionTypes.reduce((s, q) => s + q.count, 0);
     const totalMarks = questionTypes.reduce((s, q) => s + q.count * q.marks, 0);
     const types = questionTypes.map((q) => q.type);
-    const title = `Assignment – ${new Date(dueDate).toLocaleDateString("en-GB")}`;
 
     try {
       const res = await fetch("http://127.0.0.1:5000/api/assignments", {
@@ -190,8 +209,8 @@ export const useAssignmentStore = create<AssignmentFormState>((set, get) => ({
         body: JSON.stringify({
           clerkId,
           title,
-          subject: "General",
-          gradeLevel: "General",
+          subject,
+          gradeLevel,
           dueDate,
           totalMarks,
           questionTypes: types,

@@ -32,4 +32,20 @@ router.get("/me", async (req: Request, res: Response) => {
   res.json(user);
 });
 
+// PUT /api/users/me
+router.put("/me", async (req: Request, res: Response) => {
+  const clerkId = String(req.body.clerkId ?? "");
+  if (!clerkId) { res.status(400).json({ error: "clerkId required" }); return; }
+
+  const { subject, classLevel, school } = req.body;
+  const user = await User.findOneAndUpdate(
+    { clerkId },
+    { $set: { subject, classLevel, school } },
+    { new: true, runValidators: true }
+  );
+
+  if (!user) { res.status(404).json({ error: "User not found" }); return; }
+  res.json(user);
+});
+
 export default router;

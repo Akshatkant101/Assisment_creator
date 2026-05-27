@@ -5,12 +5,8 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  Wrench,
-  Library,
   Settings,
+  Sparkles,
 } from "lucide-react";
 
 export function SidebarNav() {
@@ -33,11 +29,11 @@ export function SidebarNav() {
   }, [user]);
 
   const NAV_ITEMS = [
-    { href: "/dashboard", icon: LayoutDashboard, label: "Home", exact: true },
-    { href: "/dashboard/groups", icon: Users, label: "My Groups" },
-    { href: "/dashboard", icon: FileText, label: "Assignments", exact: true, badge: assignmentsCount },
-    { href: "/dashboard/toolkit", icon: Wrench, label: "AI Teacher's Toolkit" },
-    { href: "/dashboard/library", icon: Library, label: "My Library" },
+    { href: "/dashboard", iconSrc: "/icons/Home.svg", label: "Home", exact: true },
+    { href: "/dashboard/groups", iconSrc: "/icons/group.svg", label: "My Groups" },
+    { href: "/dashboard", iconSrc: "/icons/Assignment.svg", label: "Assignments", exact: true, badge: assignmentsCount },
+    { href: "/dashboard/toolkit", iconSrc: "/icons/Book.svg", label: "AI Teacher's Toolkit" },
+    { href: "/dashboard/library", iconSrc: "/icons/library.svg", label: "My Library" },
   ];
 
   const isActive = (href: string, exact?: boolean) =>
@@ -52,7 +48,7 @@ export function SidebarNav() {
             href="/dashboard/create"
             className="w-full bg-[#272727] hover:bg-[#1a1a1a] text-white rounded-full py-3.5 px-4 flex items-center justify-center gap-2 transition-all shadow-[inset_0px_0px_10px_rgba(255,255,255,0.1)]"
           >
-            <span className="text-xl font-light leading-none">+</span>
+            <Sparkles size={16} className="text-white fill-white" />
             <span className="font-medium text-sm tracking-[-0.04em]">Create Assignment</span>
           </Link>
         </div>
@@ -73,7 +69,7 @@ export function SidebarNav() {
               }`}
             >
               <div className="flex items-center gap-3">
-                <item.icon size={20} />
+                <img src={item.iconSrc} alt="" className="w-5 h-5 opacity-90 group-hover:opacity-100" />
                 <span className="text-sm tracking-[-0.04em]">{item.label}</span>
               </div>
               {item.badge && (

@@ -5,6 +5,9 @@ export interface IUser {
   email: string;
   firstName?: string;
   lastName?: string;
+  subject?: string;
+  classLevel?: string;
+  school?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -15,6 +18,9 @@ const UserSchema = new Schema<IUser>(
     email:     { type: String, required: true, unique: true },
     firstName: { type: String },
     lastName:  { type: String },
+    subject:   { type: String },
+    classLevel:{ type: String },
+    school:    { type: String },
   },
   { timestamps: true }
 );
