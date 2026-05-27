@@ -18,6 +18,9 @@ app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api/assignments", assignmentRoutes);
+app.get("/", (req, res) => {
+  res.send("Backend is running");
+});
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
