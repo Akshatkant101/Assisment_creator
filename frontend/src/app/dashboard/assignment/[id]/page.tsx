@@ -298,7 +298,7 @@ export default function AssignmentPage() {
       }
     }, 4000);
 
-    forceTimerRef.current = setTimeout(fetchAndShow, 20000);
+    forceTimerRef.current = setTimeout(fetchAndShow, 45000);
   };
 
   const triggerGenerate = async () => {
