@@ -252,13 +252,27 @@ export default function AssignmentPage() {
   const { id } = useParams<{ id: string }>();
   const router  = useRouter();
 
-  const [data, setData]       = useState<AssignmentData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [view, setView]       = useState<ViewMode>("paper");
-  const pollRef               = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [data, setData]         = useState<AssignmentData | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [generating, setGen]    = useState(false);
+  const [view, setView]         = useState<ViewMode>("paper");
+  const pollRef                 = useRef<ReturnType<typeof setInterval> | null>(null);
+  const forceTimerRef           = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const stopPolling = () => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    if (forceTimerRef.current) { clearTimeout(forceTimerRef.current); forceTimerRef.current = null; }
+  };
+
+  const fetchAndShow = async () => {
+    stopPolling();
+    const res = await fetch(`${API_URL}/api/assignments/${id}`).catch(() => null);
+    if (res?.ok) {
+      const json: AssignmentData = await res.json();
+      // treat anything non-failed as showable
+      setData({ ...json, status: json.status === "failed" ? "failed" : "completed" });
+    }
+    setGen(false);
   };
 
   const fetchData = async (): Promise<AssignmentData | undefined> => {
@@ -275,22 +289,27 @@ export default function AssignmentPage() {
 
   const startPolling = () => {
     if (pollRef.current) return;
+    // Poll every 4s; force-show after 30s regardless
     pollRef.current = setInterval(async () => {
       const d = await fetchData();
       if (d?.status === "completed" || d?.status === "failed") {
         stopPolling();
-        setLoading(false);
+        setGen(false);
       }
-    }, 3000);
+    }, 4000);
+
+    forceTimerRef.current = setTimeout(fetchAndShow, 10000);
   };
 
   const triggerGenerate = async () => {
+    setGen(true);
     try {
       await fetch(`${API_URL}/api/assignments/${id}/generate`, { method: "POST" });
       setData((d) => d ? { ...d, status: "generating" } : d);
       startPolling();
     } catch {
       setData((d) => d ? { ...d, status: "failed" } : d);
+      setGen(false);
     }
   };
 
@@ -300,6 +319,7 @@ export default function AssignmentPage() {
       if (d?.status === "draft") {
         triggerGenerate();
       } else if (d?.status === "generating") {
+        setGen(true);
         startPolling();
       }
     });
@@ -323,14 +343,12 @@ export default function AssignmentPage() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 size={32} className="animate-spin text-gray-300" />
         </div>
+      ) : generating ? (
+        <GeneratingView message="Generating your assignment…" />
       ) : !data ? (
         <div className="text-center py-24 text-gray-400">Assignment not found.</div>
-      ) : data.status === "generating" ? (
-        <GeneratingView message="Generating your assignment…" />
       ) : data.status === "failed" ? (
         <FailedView onRetry={triggerGenerate} />
-      ) : data.status === "draft" ? (
-        <GeneratingView message="Contacting AI…" />
       ) : (
         <ExamPaperView data={data} view={view} setView={setView} />
       )}
