@@ -29,15 +29,25 @@ export function SidebarNav() {
   }, [user]);
 
   const NAV_ITEMS = [
-    { href: "/dashboard", iconSrc: "/icons/Home.svg", label: "Home", exact: true },
+    { href: "/dashboard", iconSrc: "/icons/Home.svg", label: "Home" },
     { href: "/dashboard/groups", iconSrc: "/icons/group.svg", label: "My Groups" },
-    { href: "/dashboard", iconSrc: "/icons/Assignment.svg", label: "Assignments", exact: true, badge: assignmentsCount },
+    { href: "/dashboard", iconSrc: "/icons/Assignment.svg", label: "Assignments", badge: assignmentsCount },
     { href: "/dashboard/toolkit", iconSrc: "/icons/Book.svg", label: "AI Teacher's Toolkit" },
     { href: "/dashboard/library", iconSrc: "/icons/library.svg", label: "My Library" },
   ];
 
-  const isActive = (href: string, exact?: boolean) =>
-    exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
+  const isActive = (label: string, href: string) => {
+    if (label === "Assignments") {
+      return (
+        pathname === "/dashboard" ||
+        pathname.startsWith("/dashboard/assignment") ||
+        pathname === "/dashboard/create"
+      );
+    }
+    // Home is never active when Assignments would be active
+    if (label === "Home") return false;
+    return pathname === href || pathname.startsWith(href + "/");
+  };
 
   return (
     <div className="flex flex-col flex-1">
@@ -57,7 +67,7 @@ export function SidebarNav() {
       {/* Navigation items */}
       <nav className="px-4 space-y-1 flex-1">
         {NAV_ITEMS.map((item) => {
-          const active = isActive(item.href, item.exact);
+          const active = isActive(item.label, item.href);
           return (
             <Link
               key={item.label}
