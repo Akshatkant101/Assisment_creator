@@ -1,0 +1,297 @@
+"use client";
+
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { useRef, useCallback } from "react";
+import { ArrowLeft, ArrowRight, Calendar, ChevronDown, Minus, Plus, X, Mic, UploadCloud } from "lucide-react";
+import { useAssignmentStore, QUESTION_TYPE_OPTIONS } from "@/store/useAssignmentStore";
+
+export default function CreateAssignmentPage() {
+  const { user } = useUser();
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    dueDate, setDueDate,
+    questionTypes, addQuestionType, removeQuestionType, updateType,
+    incrementCount, decrementCount, incrementMarks, decrementMarks,
+    additionalInstructions, setAdditionalInstructions,
+    contextFileName, setContextFile,
+    isDragging, setIsDragging,
+    errors, validate, isSubmitting, submitForm,
+  } = useAssignmentStore();
+
+  const totalQuestions = questionTypes.reduce((s, q) => s + q.count, 0);
+  const totalMarks = questionTypes.reduce((s, q) => s + q.count * q.marks, 0);
+
+  const handleFile = useCallback(
+    (file: File | null) => { if (file) setContextFile(file, file.name); },
+    [setContextFile]
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      handleFile(e.dataTransfer.files[0] ?? null);
+    },
+    [handleFile, setIsDragging]
+  );
+
+  const handleNext = async () => {
+    if (!validate()) return;
+    if (!user) return;
+    const id = await submitForm(user.id);
+    if (id) router.push(`/dashboard/assignment/${id}`);
+  };
+
+  return (
+    <div className="min-h-full bg-gradient-to-b from-[#EEEEEE] to-[#DADADA] px-6 py-8 relative overflow-hidden">
+      {/* Decorative blur ellipse */}
+      <div
+        className="pointer-events-none absolute -bottom-20 left-0 right-0 h-[428px] rounded-full opacity-40"
+        style={{ background: "rgba(76,76,76,0.4)", filter: "blur(400px)" }}
+      />
+
+      <div className="relative flex flex-col items-center">
+
+        {/* ─── Page header ─────────────────────────────────────── */}
+        <div className="flex flex-col items-center gap-2 mb-8 w-full max-w-[810px]">
+          <div className="flex items-center gap-2">
+            <span
+              className="w-3 h-3 rounded-full bg-[#4BC26D] inline-block"
+              style={{ boxShadow: "0 0 0 4px rgba(75,194,109,0.4)" }}
+            />
+            <h1 className="text-[20px] font-bold text-[#303030] tracking-[-0.04em] leading-[140%]">
+              Create Assignment
+            </h1>
+          </div>
+          <p className="text-[14px] font-normal tracking-[-0.04em] leading-[140%] text-center text-[rgba(94,94,94,0.55)]">
+            Set up a new assignment for your students
+          </p>
+        </div>
+
+        {/* ─── Form panel (glassmorphism) ───────────────────────── */}
+        <div className="w-full max-w-[810px] bg-white/50 backdrop-blur-sm rounded-[32px] p-8 flex flex-col gap-8">
+
+          {/* Section header */}
+          <div>
+            <h2 className="text-[20px] font-bold text-[#303030] tracking-[-0.04em] leading-[140%]">
+              Assignment Details
+            </h2>
+            <p className="text-[14px] text-[rgba(94,94,94,0.8)] font-normal tracking-[-0.04em] leading-[140%] mt-1 max-w-[251px]">
+              Basic information about your assignment
+            </p>
+          </div>
+
+          {/* ─── 1. File upload ───────────────────────────────────── */}
+          <div className="flex flex-col gap-3">
+            <div
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={[
+                "flex flex-col items-center gap-4 py-6 px-8 bg-white rounded-[24px]",
+                "border-[1.75px] border-dashed cursor-pointer transition-colors select-none",
+                isDragging ? "border-[#303030] bg-gray-50" : "border-black/20",
+              ].join(" ")}
+            >
+              <div className="w-10 h-10 bg-white rounded-lg shadow-sm flex items-center justify-center">
+                <UploadCloud size={20} className="text-[#5E5E5E]" />
+              </div>
+              <div className="text-center">
+                <p className="text-[16px] font-medium text-[#303030] tracking-[-0.04em] leading-[140%]">
+                  {contextFileName || "Choose a file or drag & drop it here"}
+                </p>
+                <p className="text-[14px] text-[#A9A9A9] font-normal tracking-[-0.04em] leading-[140%] mt-1">
+                  PDF, TXT, JPEG, PNG up to 10MB
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                className="bg-[#F6F6F6] hover:bg-gray-200 transition-colors px-6 py-2 rounded-full text-[14px] font-medium text-[#303030] tracking-[-0.04em]"
+              >
+                Browse Files
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.txt,.jpg,.jpeg,.png"
+                onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+              />
+            </div>
+            <p className="text-[16px] font-medium text-[rgba(48,48,48,0.6)] tracking-[-0.04em] leading-[140%]">
+              Upload images of your preferred document/image
+            </p>
+          </div>
+
+          {/* ─── 2. Due Date ──────────────────────────────────────── */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[16px] font-bold text-[#303030] tracking-[-0.04em] leading-[140%]">
+              Due Date
+            </label>
+            <div className={[
+              "flex items-center justify-between px-4 py-[11px] rounded-full border-[1.25px] bg-transparent",
+              errors.dueDate ? "border-red-400" : "border-[#DADADA]",
+            ].join(" ")}>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="flex-1 text-[16px] font-medium text-[#303030] bg-transparent outline-none tracking-[-0.04em] cursor-pointer"
+                style={{ colorScheme: "light" }}
+              />
+              <Calendar size={24} className="text-[#A9A9A9] flex-shrink-0 pointer-events-none" />
+            </div>
+            {errors.dueDate && (
+              <p className="text-sm text-red-500 tracking-[-0.04em]">{errors.dueDate}</p>
+            )}
+          </div>
+
+          {/* ─── 3. Question Types ────────────────────────────────── */}
+          <div className="flex flex-col gap-4">
+            <label className="text-[16px] font-bold text-[#303030] tracking-[-0.04em] leading-[140%]">
+              Question Type
+            </label>
+
+            {/* Column headers */}
+            {questionTypes.length > 0 && (
+              <div className="flex items-center gap-4">
+                <div className="flex-1" />
+                <p className="w-[148px] text-center text-[16px] font-medium text-[#303030] tracking-[-0.04em]">
+                  No. of Questions
+                </p>
+                <p className="w-[100px] text-center text-[16px] font-medium text-[#303030] tracking-[-0.04em]">
+                  Marks
+                </p>
+                <div className="w-8" />
+              </div>
+            )}
+
+            {/* Rows */}
+            {questionTypes.map((qt, i) => (
+              <div key={i} className="flex items-center gap-4">
+                {/* Dropdown */}
+                <div className="flex-1 relative">
+                  <select
+                    value={qt.type}
+                    onChange={(e) => updateType(i, e.target.value)}
+                    className="w-full appearance-none px-4 py-[11px] bg-white rounded-full border-[1.25px] border-[#DADADA] text-[16px] font-medium text-[#303030] tracking-[-0.04em] outline-none pr-9 cursor-pointer"
+                  >
+                    {QUESTION_TYPE_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#303030] pointer-events-none" />
+                </div>
+
+                {/* Count stepper */}
+                <div className="w-[148px] flex items-center justify-between px-2 py-[11px] bg-white rounded-full border-[1.25px] border-[#DADADA]">
+                  <button type="button" onClick={() => decrementCount(i)} className="w-7 h-7 flex items-center justify-center text-[#303030] hover:bg-gray-100 rounded-full transition-colors">
+                    <Minus size={16} />
+                  </button>
+                  <span className="text-[16px] font-medium text-[#303030] tracking-[-0.04em] min-w-[2.5ch] text-center">{qt.count}</span>
+                  <button type="button" onClick={() => incrementCount(i)} className="w-7 h-7 flex items-center justify-center text-[#303030] hover:bg-gray-100 rounded-full transition-colors">
+                    <Plus size={16} />
+                  </button>
+                </div>
+
+                {/* Marks stepper */}
+                <div className="w-[100px] flex items-center justify-between px-2 py-[11px] bg-white rounded-full border-[1.25px] border-[#DADADA]">
+                  <button type="button" onClick={() => decrementMarks(i)} className="w-7 h-7 flex items-center justify-center text-[#303030] hover:bg-gray-100 rounded-full transition-colors">
+                    <Minus size={16} />
+                  </button>
+                  <span className="text-[16px] font-medium text-[#303030] tracking-[-0.04em] min-w-[2ch] text-center">{qt.marks}</span>
+                  <button type="button" onClick={() => incrementMarks(i)} className="w-7 h-7 flex items-center justify-center text-[#303030] hover:bg-gray-100 rounded-full transition-colors">
+                    <Plus size={16} />
+                  </button>
+                </div>
+
+                {/* Remove */}
+                <button type="button" onClick={() => removeQuestionType(i)} className="w-8 h-8 flex items-center justify-center text-[#A9A9A9] hover:text-[#303030] hover:bg-gray-100 rounded-full transition-colors flex-shrink-0">
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+
+            {/* Add button */}
+            <button type="button" onClick={addQuestionType} className="flex items-center gap-2 w-fit group">
+              <div className="w-8 h-8 bg-[#2B2B2B] group-hover:bg-black rounded-full flex items-center justify-center transition-colors">
+                <Plus size={14} className="text-white" />
+              </div>
+              <span className="text-[14px] font-bold text-[#303030] tracking-[-0.04em] leading-[140%]">
+                Add Question Type
+              </span>
+            </button>
+
+            {/* Totals */}
+            {questionTypes.length > 0 && (
+              <div className="flex flex-col items-end gap-2 mt-1">
+                <span className="text-[16px] font-medium text-[#303030] tracking-[-0.04em] leading-[110%]">
+                  Total Questions : {totalQuestions}
+                </span>
+                <span className="text-[16px] font-medium text-[#303030] tracking-[-0.04em] leading-[110%]">
+                  Total Marks : {totalMarks}
+                </span>
+              </div>
+            )}
+
+            {errors.questionTypes && (
+              <p className="text-sm text-red-500 tracking-[-0.04em]">{errors.questionTypes}</p>
+            )}
+          </div>
+
+          {/* ─── 4. Additional Instructions ──────────────────────── */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[16px] font-bold text-[#303030] tracking-[-0.04em] leading-[140%]">
+              Additional Information{" "}
+              <span className="text-[#A9A9A9] font-normal">(For better output)</span>
+            </label>
+            <div className="bg-white/25 border-[1.25px] border-dashed border-[#DADADA] rounded-[16px] p-4 min-h-[102px] flex flex-col justify-between">
+              <textarea
+                value={additionalInstructions}
+                onChange={(e) => setAdditionalInstructions(e.target.value)}
+                placeholder="e.g Generate a question paper for 3 hour exam duration..."
+                className="flex-1 w-full bg-transparent text-[14px] font-medium text-[#303030] placeholder:text-[rgba(48,48,48,0.6)] tracking-[-0.04em] leading-[140%] outline-none resize-none min-h-[60px]"
+              />
+              <div className="flex justify-end mt-2">
+                <button type="button" className="w-9 h-9 bg-[#F0F0F0] hover:bg-gray-200 transition-colors rounded-full flex items-center justify-center">
+                  <Mic size={16} className="text-[#303030]" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {errors.general && (
+            <p className="text-sm text-red-500 text-center tracking-[-0.04em]">{errors.general}</p>
+          )}
+        </div>
+
+        {/* ─── Nav buttons ──────────────────────────────────────────── */}
+        <div className="flex items-center justify-between w-full max-w-[810px] mt-8 mb-4">
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard")}
+            className="flex items-center gap-1 bg-white hover:bg-gray-50 transition-colors px-6 py-3 rounded-full text-[16px] font-medium text-[#303030] tracking-[-0.04em] shadow-sm"
+          >
+            <ArrowLeft size={20} />
+            Previous
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={isSubmitting}
+            className="flex items-center gap-1 bg-[#181818] hover:bg-black transition-colors px-6 py-3 rounded-full text-[16px] font-medium text-white tracking-[-0.04em] disabled:opacity-60 shadow-sm"
+          >
+            {isSubmitting ? "Saving..." : "Next"}
+            <ArrowRight size={20} />
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
